@@ -23,6 +23,9 @@
 		When initial experimentation occurred, I noticed that the model would stop generating text abruptly, leaving me with malformed JSON output. The issue stemmed from the fact that the generation length, even though it is unlimited by default, was causing the model to stop generating after 30 or so tokens. To fix this, I made the generation length 99999, which is significantly more than would realistically be required, but ensures that the model natural finishes its language generation. \\
 		Additionally, reducing the temperature (from the default of 1), significantly improved the generation quality and the reduced the number of the situations where the model would attempt to "answer" me, instead of writing the plain JSON output.
 
+	\subsection{Job I/O}
+		The Job, which uses the LLM, named Correct, takes in the output from context\_add directly and uses the error description and chunk (containing context) for the error. This is fed into the LLM, while being wrapped around by a template. The job, then returns a JSON object, with a schema that contains an array of compiler errors and a linker error (null, if one was not thrown).
+
 	\subsection{Attempts}
 		\begin{enumerate}
 			\item
@@ -92,7 +95,7 @@ int main() {
   struct lol = struct Meme{};
 }
 			\end{minted}
-			Model output:
+			OpenOrca output:
 			\begin{minted}[breaklines]{json}
 {
   "fixes": [
@@ -122,7 +125,7 @@ int main() {
   int n = 43
 }
 			\end{minted}
-			Model output:
+			Mistral Instruct output:
 			\begin{minted}[breaklines]{json}
 {
   "fixes": [
@@ -155,7 +158,7 @@ int main() {
   };
 }
 			\end{minted}
-			Model output:
+			Mistral Instruct output:
 			\begin{minted}[breaklines]{json}
 {
   "fixes": [
@@ -197,7 +200,7 @@ int min() {
 int test() {
 }
 			\end{minted}
-			Model output:
+			OpenOrca output:
 			\begin{minted}[breaklines]{json}
 {
   "compiler_fixes": [
@@ -209,6 +212,43 @@ int test() {
   "linker_fixes": {
     "fix": "Add a main() function in your source code and ensure that you are correctly linking all necessary libraries.",
     "message": "The linker encountered an issue while trying to create the final executable, as it couldn't find the 'main' function which is required for starting execution."
+  }
+}
+			\end{minted}
+
+			\item
+			Broken Code:
+			main.cpp
+			\begin{minted}[breaklines]{c++}
+#include <iostream>
+// string dsa() {
+//   let d = {
+//     das auto;
+//   }
+// }
+
+int min() {
+  std::cout << "This is a demo program\n";
+  return 0;
+}
+			\end{minted}
+			something.cpp
+			\begin{minted}[breaklines]{c++}
+int test() {
+}
+			\end{minted}
+			Mistral Instruct output:
+			\begin{minted}[breaklines]{json}
+{
+  "compiler_fixes": [
+    {
+      "fix": "int test() {\n    // Add a return statement to return an integer value\n    return 42;\n}",
+      "message": "The function 'test()' does not return a value."
+    }
+  ],
+  "linker_fixes": {
+    "fix": "Ensure that you have defined and implemented the main function in your source code.",
+    "message": "The linker command failed with exit code 1 (use -v to see invocation)"
   }
 }
 			\end{minted}
