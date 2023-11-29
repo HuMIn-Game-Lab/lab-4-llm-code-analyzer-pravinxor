@@ -68,6 +68,16 @@ format!(
 )
 			\end{minted}
 			Ocassionally the tested models would only print the random line instead of the entire code chunk to replace. This fix instructs the model to keep the entire code chunk. Additionally, this fix also better depicts the schema for the model to use, since there were sometimes extranneous fields in the JSON.
+
+			\item
+			\begin{minted}[breaklines]{rust}
+let post_prompt = r#"A fully JSON response with the schema: {"message": string, "fix": string} and no additional plaintext characters. The message field explains what the linker error means. The "fix" field contains an action that a programmer could do to directly resolve the error. The JSON object: "#;
+
+format!(
+        r#"The following linker error: "{}" with the related symbols: "{}". {}"#, linker_msg, sym_messages, post_prompt
+);
+			\end{minted}
+			This update keeps the same prompt for the compiler, but additionally adds a prompt for fixing linker errors. It is heavily based on the compiler prompt, and only adds 2 fields for explaining the actual issue and a fix that a programmer could make to resolve it.
 		\end{enumerate}
 	\subsection{Models used}
 		The models used for evaluation were Mistral OpenOrca and Mistral Instruct from GPT4All. Both exhibited good performance at providing fixes, while also providing near perfect performance in providing correct JSON output.
@@ -163,6 +173,43 @@ int main() {
   struct Monkey {
     int fury;
   };
+}
+			\end{minted}
+
+			\item
+			Broken Code:
+			main.cpp
+			\begin{minted}[breaklines]{c++}
+#include <iostream>
+// string dsa() {
+//   let d = {
+//     das auto;
+//   }
+// }
+
+int min() {
+  std::cout << "This is a demo program\n";
+  return 0;
+}
+			\end{minted}
+			something.cpp
+			\begin{minted}[breaklines]{c++}
+int test() {
+}
+			\end{minted}
+			Model output:
+			\begin{minted}[breaklines]{json}
+{
+  "compiler_fixes": [
+    {
+      "fix": "int test() {\n    return 0;\n}",
+      "message": "non-void function does not return a value [-Wreturn-type]"
+    }
+  ],
+  "linker_fixes": {
+    "fix": "Add a main() function in your source code and ensure that you are correctly linking all necessary libraries.",
+    "message": "The linker encountered an issue while trying to create the final executable, as it couldn't find the 'main' function which is required for starting execution."
+  }
 }
 			\end{minted}
 		\end{enumerate}
