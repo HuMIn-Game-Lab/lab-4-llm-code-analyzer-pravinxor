@@ -1,5 +1,5 @@
 digraph {
-    make[shape=rectangle,data="{\"target\" : \"test\"}"];
+    make[shape=rectangle,data="{\"target\" : \"demo\"}"];
     make->clang_parse;
     make->print_error;
 
